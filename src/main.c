@@ -111,6 +111,7 @@ void initServer() {
     struct stat st = {0};
     if (stat(FILE_PATH, &st) == -1) {
         mkdir(FILE_PATH, 0777);
+        sleep(1);
     }
 }
 
@@ -150,17 +151,22 @@ void acceptConnection() {
         newSocketDesc = accept(serverSocketDesc, (struct sockaddr *) &serverStorage, &addr_size);
         //for each client request creates a thread and assign the client request to it to process
         //so the main thread can entertain next request
-        if (pthread_create(&tid[i], NULL, socketThread, &newSocketDesc) != 0)
-            fprintf(stderr, "Failed to create thread\n");
-        if (i >= 50) {
-            i = 0;
-            while (i < 50) {
-                pthread_join(tid[i++], NULL);
+        if (newSocketDesc >= 0) {
+            if (pthread_create(&tid[i], NULL, socketThread, &newSocketDesc) != 0)
+                fprintf(stderr, "Failed to create thread\n");
+            if (i >= 50) {
+                i = 0;
+                while (i < 50) {
+                    pthread_join(tid[i++], NULL);
 
+                }
+                i = 0;
             }
-            i = 0;
+        } else {
+            fprintf(stderr, "Failed to accept connection");
         }
     }
+    close(serverSocketDesc);
 }
 
 
